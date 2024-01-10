@@ -1,0 +1,7 @@
+sql commands-->
+
+create database bankjava;
+use bankjava;
+create table userdata(name varchar(20),dob date,username varchar(30) primary key,password varchar(20),pin int,acno int);
+insert into userdata values ('shivam','2004-07-12','shhh','1234',1234,001);
+select * from userdata

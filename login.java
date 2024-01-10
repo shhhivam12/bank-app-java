@@ -1,10 +1,13 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.sql.*;
 
 
 public class login {
@@ -90,7 +93,17 @@ class loginframe {
         password.setBounds(75, 337, 200, 20);
         Login.setBounds(135, 363, 75, 20);
 
-        errormsg.setBounds(75, 340, 75, 20);
+        Login.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String pass=new String(password.getPassword());
+                dbconnection(username.getText(),pass);
+            }
+            
+        });
+
+        errormsg.setBounds(50, 400, 230, 20);
         errormsg.setForeground(Color.red);
         errormsg.setVisible(false);
         
@@ -100,6 +113,7 @@ class loginframe {
         panel2.add(password);
         panel2.add(Login);
         panel2.add(uicoimg);
+        panel2.add(errormsg);
 
         framelogin=new JFrame();
         framelogin.setSize(700,450);
@@ -110,5 +124,27 @@ class loginframe {
         framelogin.add(panel1);
         framelogin.add(panel2);
         framelogin.setVisible(true);
+    }
+
+    void dbconnection(String uname,String pass){
+        try {
+    
+            // Class.forName("com.mysql.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root","imemyselfshivam");
+            Statement st=con.createStatement();
+
+            if(uname!="" && pass!=""){
+                ResultSet rs =st.executeQuery("select * from userdata where username='"+uname+"' and password ='"+pass+"'");
+                if(rs.next()){
+                    errormsg.setText("*Login successfull");
+                }else{
+                    errormsg.setText("*Username or Password is incorrect.");
+                }
+                errormsg.setVisible(true);
+            }
+        } catch (Exception e) {
+            errormsg.setText(e.getMessage());
+            errormsg.setVisible(true);
+        }
     }
 }
