@@ -136,6 +136,8 @@ class loginframe {
             if(uname!="" && pass!=""){
                 ResultSet rs =st.executeQuery("select * from userdata where username='"+uname+"' and password ='"+pass+"'");
                 if(rs.next()){
+                    //new mainwindow(uname);  TODO-call main window after login
+                    framelogin.dispose();
                     errormsg.setText("*Login successfull");
                 }else{
                     errormsg.setText("*Username or Password is incorrect.");

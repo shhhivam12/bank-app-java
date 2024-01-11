@@ -60,8 +60,7 @@ public class signup {
         pinJTextField = new JTextField();
         pinJTextField.setHorizontalAlignment(JLabel.CENTER);
 
-        errormsg = new JLabel();
-        errormsg.setVisible(false);
+        errormsg = new JLabel("");
         errormsg.setForeground(Color.red);
 
         createJButton = new JButton("Create Account");
@@ -81,6 +80,7 @@ public class signup {
                 passwordJTextField.setText("");
                 dobJTextField.setText("");
                 pinJTextField.setText("");
+                errormsg.setText("");
             }
 
         });
@@ -175,6 +175,9 @@ public class signup {
             String pin = pinJTextField.getText();
             String acno = "" + (int) (Math.random() * 100000);
 
+            if(uname.isEmpty() || name.isEmpty()|| pass.isEmpty()|| dob.isEmpty()|| pin.isEmpty())
+            {errormsg.setText("*Fill all the feilds to continue");return;}
+
             int temp = st.executeUpdate("insert into userdata values ('" + name + "','" + dob + "','" + uname + "','"
                     + pass + "'," + pin + "," + acno + ");");
 
@@ -183,10 +186,8 @@ public class signup {
             } else {
                 errormsg.setText("*Unsuccessful");
             }
-            errormsg.setVisible(true);
         } catch (Exception e) {
             errormsg.setText(e.getMessage());
-            errormsg.setVisible(true);
         }
     }
 }
