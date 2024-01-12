@@ -128,15 +128,15 @@ class loginframe {
 
     void dbconnection(String uname,String pass){
         try {
-    
-            // Class.forName("com.mysql.jdbc.Driver");
+            
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root","imemyselfshivam");
             Statement st=con.createStatement();
 
             if(uname!="" && pass!=""){
-                ResultSet rs =st.executeQuery("select * from userdata where username='"+uname+"' and password ='"+pass+"'");
+                ResultSet rs =st.executeQuery("select name from userdata where username='"+uname+"' and password ='"+pass+"'");
                 if(rs.next()){
-                    //new mainwindow(uname);  TODO-call main window after login
+                    String name=rs.getString("name");
+                    //new mainwindow(name,uname);  TODO-call main window after login
                     framelogin.dispose();
                     errormsg.setText("*Login successfull");
                 }else{
