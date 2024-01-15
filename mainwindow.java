@@ -1,16 +1,16 @@
 import java.awt.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -23,14 +23,21 @@ class mainwindow {
         }
     }
 
-    String name, username;
+    String name, username, accBal, accNo;
     JPanel topPanel, centrePanel, bottomPanel; // panels for frame window
     JLabel topPanelText, exitmainwindow, minimize, uicoimg;// labels for top panel
     CardLayout c1; // card layout in centre panel
     JPanel homePanel, transactPanel, historyPanel, personalPanel;// panels for card layout(centre panel)
     JLabel homeicon, transicon, historyicon, myaccicon, logouticon; // icons for bottom panel
     Connection con;
-    JLabel accNo, accBal; //centrehome
+    JLabel homerror;
+    JPanel homepanel1, homepanel2;
+    // transact panel
+    JTextField transact;
+    JPasswordField enterpin;
+    JComboBox<String> transactmenu;
+    JButton transactButton;
+    JLabel transacterror, transacttop;
 
     mainwindow(String username, String name) throws Exception {
         this.name = name;
@@ -54,7 +61,6 @@ class mainwindow {
         transicon = new JLabel(new ImageIcon(icon2));
         transicon.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                transact();
                 c1.show(centrePanel, "transaction");
             }
         });
@@ -124,12 +130,12 @@ class mainwindow {
         topPanelText.setFont(new Font("", Font.BOLD, 20));
         topPanelText.setForeground(Color.WHITE);
 
-        uicoimg.setBounds(25, 30, 180, 110);
+        uicoimg.setBounds(450, 20, 180, 110);
         exitmainwindow.setBounds(20, 20, 15, 15);
         minimize.setBounds(41, 15, 15, 15);
-        topPanelText.setBounds(250, 5, 470, 50);
+        topPanelText.setBounds(25, 55, 470, 50);
 
-        topPanel.setPreferredSize(new Dimension(750, 150));
+        topPanel.setPreferredSize(new Dimension(650, 150));
         topPanel.setBackground(new Color(52, 32, 72));
         topPanel.add(topPanelText);
         topPanel.add(exitmainwindow);
@@ -137,37 +143,92 @@ class mainwindow {
         topPanel.add(uicoimg);
         // TODO add curr date time in top panel
 
-        // centre panels
-
-        homePanel = new JPanel(new GridLayout(4, 2, 0, 10));
+        homePanel = new JPanel(new GridLayout(2, 0, 0, 0));
         transactPanel = new JPanel();
-        historyPanel = new JPanel(new GridLayout(11, 6));
+        historyPanel = new JPanel();
         personalPanel = new JPanel();
-        
-        accNo=new JLabel("");
-        accBal=new JLabel("");
-        home();
-        homePanel.add(new JLabel("Name :"));
-        homePanel.add(new JLabel(name));
-        homePanel.add(new JLabel("Username :"));
-        homePanel.add(new JLabel(username));
-        homePanel.add(new JLabel("Account number :"));
-        homePanel.add(accNo);
-        homePanel.add(new JLabel("Account balance :"));
-        homePanel.add(accBal);
+        homerror = new JLabel();
+        homerror.setForeground(Color.red);
 
-
-        transactPanel.add(new JLabel("sno"));
-        transactPanel.add(new JLabel("accNo"));
-        transactPanel.add(new JLabel("amt"));
-        transactPanel.add(new JLabel("dateoftrans"));
-        transactPanel.add(new JLabel("transmode"));
-        transactPanel.add(new JLabel("accBal"));
+        // centre panels
 
         centrePanel.add(homePanel, "home");
         centrePanel.add(transactPanel, "transaction");
         centrePanel.add(historyPanel, "history");
         centrePanel.add(personalPanel, "personal");
+
+        // homepanel
+        homepanel1 = new JPanel(new GridLayout(4, 0));
+        homepanel2 = new JPanel();
+        home();
+
+        homePanel.add(homepanel1);
+        homePanel.add(homepanel2);
+
+        homepanel1.add(new JLabel("          Name                         :              " + name));
+        homepanel1.add(new JLabel("Username                      :              " + username));
+        homepanel1.add(new JLabel("          Account number               :              " + accNo));
+        homepanel1.add(new JLabel("Account balance                 :              " + accBal));
+        homepanel1.add(homerror);
+
+        // transactpanel
+        transactPanel.setLayout(null);
+        transacttop = new JLabel("Add or Widthdraw from your account");
+        JLabel transactemp1 = new JLabel("Enter Amount :");
+        JLabel transactemp2 = new JLabel("Enter your pin :");
+        JLabel transactemp3 = new JLabel("Enter mode :");
+        transactemp1.setBounds(20, 100, 100, 20);
+        transactemp2.setBounds(20, 150, 100, 20);
+        transactemp3.setBounds(400, 100, 100, 20);
+
+        transacttop.setFont(new Font("", Font.PLAIN, 30));
+        transacttop.setBounds(80, 20, 500, 30);
+
+        transact = new JTextField();
+        transact.setBounds(150, 100, 150, 20);
+
+        transactmenu = new JComboBox<>(new String[] { "Dr.(-)", "Cr.(+)" });
+        transactmenu.setBounds(510, 100, 80, 20);
+
+        enterpin = new JPasswordField();
+        enterpin.setBounds(150, 150, 150, 20);
+
+        transactButton = new JButton("Transact");
+        transactButton.setBounds(330, 150, 100, 20);
+        transactButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String pass = String.valueOf(enterpin.getPassword());
+                if (transact.getText().isBlank() || pass.isBlank()) {
+                    transacterror.setText("*Field cannot be empty >_<");
+                } else {
+                    if (pass.length() > 4) {
+                        transacterror.setText("*Pin cannot be more than 4 chars 0_0");
+                    } else if (transact.getText().length() > 8) {
+                        transacterror.setText("*Transaction <1cr not allowed by RBI-");
+                    } else {
+                        transact(pass);
+                    }
+                }
+            }
+        });
+
+        transacterror = new JLabel();
+        transacterror.setForeground(Color.red);
+        transacterror.setBounds(150, 220, 400, 20);
+
+        transactPanel.add(transacttop);
+        transactPanel.add(transactemp1);
+        transactPanel.add(transactemp2);
+        transactPanel.add(transactemp3);
+        transactPanel.add(transact);
+        transactPanel.add(enterpin);
+        transactPanel.add(transactmenu);
+        transactPanel.add(transactButton);
+        transactPanel.add(transacterror);
+
+        // history
+        // personal
 
         // bottom panel-->
         bottomPanel.setPreferredSize(new Dimension(150, 70));
@@ -184,10 +245,10 @@ class mainwindow {
         f.add(topPanel, BorderLayout.NORTH);
         f.add(centrePanel, BorderLayout.CENTER);
         f.add(bottomPanel, BorderLayout.SOUTH);
-        f.setSize(750, 500);
+        f.setSize(650, 500);
         f.setLocationRelativeTo(null);
         f.setUndecorated(true);
-        f.setShape(new RoundRectangle2D.Double(0, 0, 750, 500, 45, 45));
+        f.setShape(new RoundRectangle2D.Double(0, 0, 650, 500, 25, 25));
         f.setVisible(true);
     }
 
@@ -197,42 +258,59 @@ class mainwindow {
             Statement st = con.createStatement();
             ResultSet rs = st.executeQuery("select acno,acbal from transactions where username ='" + username + "';");
             while (rs.next()) {
-                accNo.setText("" + rs.getInt("acno"));
-                accBal.setText("" + rs.getInt("acbal") + " Rs");
+                accNo = "" + rs.getInt("acno");
+                accBal = "" + rs.getInt("acbal") + " Rs";
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            homerror.setText(e.getMessage());
         }
     }
 
-    void transact() {
-        transactPanel.setBackground(Color.black);
+    void transact(String pass) {
+        int mode = transactmenu.getSelectedIndex(); // mode=0 dr.,1=cr.
+        int amt;
+        try {
+            amt = Integer.parseInt(transact.getText());
+        } catch (Exception e) {
+            transacterror.setText("*Invalid Amount");
+            return;
+        }
 
-
+        if (mode == 0) {
+            JOptionPane.showMessageDialog(null, "Rs. " + amt + " Debited from your bank account",
+                    "Transaction Succesfull", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, "Rs. " + amt + " Credited to your bank account",
+                    "Transaction Succesfull", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     void history() {
         Statement st;
         try {
-            int s=0;
             st = con.createStatement();
             ResultSet rs = st.executeQuery("select * from transactions where username ='" + username + "';");
+            String[][] tabledata = new String[50][6];
+            String[] coloums = { "SNo.", "Acc Number", "Amount", "Date", "Transfer Mode", "Balance" };
+            int s = 0;
             while (rs.next()) {
-                historyPanel.add(new JLabel(""+s++));
-                historyPanel.add(new JLabel(accNo.getText()));
-                historyPanel.add(new JLabel(rs.getString("amt")));
-                historyPanel.add(new JLabel(rs.getString("dateoftrans")));
-                historyPanel.add(new JLabel(rs.getString("transmode")));
-                historyPanel.add(new JLabel(rs.getString("acbal")));
+                tabledata[s][0] = "" + s;
+                tabledata[s][1] = accNo;
+                tabledata[s][2] = rs.getString("amt");
+                tabledata[s][3] = rs.getString("dateoftrans");
+                tabledata[s][4] = rs.getString("transmode");
+                tabledata[s][5] = rs.getString("acbal");
+                s++;
             }
+            JTable jt = new JTable(tabledata, coloums);
+            JScrollPane js = new JScrollPane(jt);
+            historyPanel.add(js);
         } catch (SQLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
     void personal() {
-
     }
 
 }
