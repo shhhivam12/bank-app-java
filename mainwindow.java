@@ -9,10 +9,12 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 
 class mainwindow {
     public static void main(String[] args) {
@@ -23,21 +25,26 @@ class mainwindow {
         }
     }
 
-    String name, username, accBal, accNo;
+    int currbal;
+    String name, username, accNo;
     JPanel topPanel, centrePanel, bottomPanel; // panels for frame window
-    JLabel topPanelText, exitmainwindow, minimize, uicoimg;// labels for top panel
+    JLabel topPanelText, exitmainwindow, minimize, uicoimg;
+    static JLabel toppaneltime;// labels for top panel
     CardLayout c1; // card layout in centre panel
     JPanel homePanel, transactPanel, historyPanel, personalPanel;// panels for card layout(centre panel)
     JLabel homeicon, transicon, historyicon, myaccicon, logouticon; // icons for bottom panel
     Connection con;
     JLabel homerror;
     JPanel homepanel1, homepanel2;
+    JLabel homeaccbal;
+
+    JTable jt;
     // transact panel
     JTextField transact;
     JPasswordField enterpin;
     JComboBox<String> transactmenu;
     JButton transactButton;
-    JLabel transacterror, transacttop;
+    JLabel transacterror, transacttop,transactavlbal;
 
     mainwindow(String username, String name) throws Exception {
         this.name = name;
@@ -55,6 +62,7 @@ class mainwindow {
                 home();
                 c1.show(centrePanel, "home");
             }
+
         });
 
         BufferedImage icon2 = ImageIO.read(new File("TRANSACTICON.png"));
@@ -110,7 +118,10 @@ class mainwindow {
         topPanelText = new JLabel("<HTML><U>Welcome " + name + " have a great day :)</U></HTML>");
         exitmainwindow = new JLabel("X");
         minimize = new JLabel("_");
+        toppaneltime=new JLabel("");
 
+        SetTime settime=new SetTime();
+        settime.start();
         minimize.setForeground(Color.white);
         exitmainwindow.setForeground(Color.white);
         minimize.setSize(15, 15);
@@ -129,11 +140,13 @@ class mainwindow {
         });
         topPanelText.setFont(new Font("", Font.BOLD, 20));
         topPanelText.setForeground(Color.WHITE);
+        toppaneltime.setForeground(Color.WHITE);
 
         uicoimg.setBounds(450, 20, 180, 110);
         exitmainwindow.setBounds(20, 20, 15, 15);
         minimize.setBounds(41, 15, 15, 15);
         topPanelText.setBounds(25, 55, 470, 50);
+        toppaneltime.setBounds(10, 130, 470, 20);
 
         topPanel.setPreferredSize(new Dimension(650, 150));
         topPanel.setBackground(new Color(52, 32, 72));
@@ -141,6 +154,7 @@ class mainwindow {
         topPanel.add(exitmainwindow);
         topPanel.add(minimize);
         topPanel.add(uicoimg);
+        topPanel.add(toppaneltime);
         // TODO add curr date time in top panel
 
         homePanel = new JPanel(new GridLayout(2, 0, 0, 0));
@@ -168,12 +182,14 @@ class mainwindow {
         homepanel1.add(new JLabel("          Name                         :              " + name));
         homepanel1.add(new JLabel("Username                      :              " + username));
         homepanel1.add(new JLabel("          Account number               :              " + accNo));
-        homepanel1.add(new JLabel("Account balance                 :              " + accBal));
+        homeaccbal=new JLabel("Account balance                 :              " + currbal+" Rs");
+        homepanel1.add(homeaccbal);
         homepanel1.add(homerror);
 
         // transactpanel
         transactPanel.setLayout(null);
         transacttop = new JLabel("Add or Widthdraw from your account");
+        transactavlbal=new JLabel("Current Bal : "+currbal+" Rs");
         JLabel transactemp1 = new JLabel("Enter Amount :");
         JLabel transactemp2 = new JLabel("Enter your pin :");
         JLabel transactemp3 = new JLabel("Enter mode :");
@@ -181,13 +197,15 @@ class mainwindow {
         transactemp2.setBounds(20, 150, 100, 20);
         transactemp3.setBounds(400, 100, 100, 20);
 
+        transactavlbal.setBounds(450, 250, 200, 20);
+
         transacttop.setFont(new Font("", Font.PLAIN, 30));
         transacttop.setBounds(80, 20, 500, 30);
 
         transact = new JTextField();
         transact.setBounds(150, 100, 150, 20);
 
-        transactmenu = new JComboBox<>(new String[] { "Dr.(-)", "Cr.(+)" });
+        transactmenu = new JComboBox<>(new String[] { "Dr.", "Cr." });
         transactmenu.setBounds(510, 100, 80, 20);
 
         enterpin = new JPasswordField();
@@ -226,8 +244,18 @@ class mainwindow {
         transactPanel.add(transactmenu);
         transactPanel.add(transactButton);
         transactPanel.add(transacterror);
+        transactPanel.add(transactavlbal);
+
 
         // history
+        JButton refreshhistoy=new JButton("History");
+        refreshhistoy.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            deletentry();
+            }
+        });
+        historyPanel.add(refreshhistoy);
         // personal
 
         // bottom panel-->
@@ -256,33 +284,52 @@ class mainwindow {
         try {
             con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root", "imemyselfshivam");
             Statement st = con.createStatement();
-            ResultSet rs = st.executeQuery("select acno,acbal from transactions where username ='" + username + "';");
+            ResultSet rs = st.executeQuery("select acno,acbal from userdata where username ='" + username + "';");
             while (rs.next()) {
                 accNo = "" + rs.getInt("acno");
-                accBal = "" + rs.getInt("acbal") + " Rs";
+                currbal = rs.getInt("acbal");
             }
         } catch (SQLException e) {
             homerror.setText(e.getMessage());
         }
     }
 
-    void transact(String pass) {
+    void transact(String p) {
         int mode = transactmenu.getSelectedIndex(); // mode=0 dr.,1=cr.
-        int amt;
+        int amt ,pin;
+        boolean temp=false; 
+        
         try {
             amt = Integer.parseInt(transact.getText());
+            pin = Integer.parseInt(p);
         } catch (Exception e) {
-            transacterror.setText("*Invalid Amount");
+            transacterror.setText("*Pin/Amount can only be numeric");
+            return;
+        }
+        try {
+            Statement st=con.createStatement();
+            ResultSet rs=st.executeQuery("select pin from userdata where username='"+username+"';");
+               rs.next();
+               if(pin==(rs.getInt("pin"))){
+                temp=updatetransaction(amt);
+               }else{
+                JOptionPane.showMessageDialog(null,"Incorrect Pin","Error",JOptionPane.ERROR_MESSAGE);
+                return;
+               }
+               
+        } catch (Exception e) {
+            transacterror.setText(e.getMessage());
             return;
         }
 
-        if (mode == 0) {
+        if(temp)
+        {if (mode == 0) {
             JOptionPane.showMessageDialog(null, "Rs. " + amt + " Debited from your bank account",
                     "Transaction Succesfull", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(null, "Rs. " + amt + " Credited to your bank account",
                     "Transaction Succesfull", JOptionPane.INFORMATION_MESSAGE);
-        }
+        }}
     }
 
     void history() {
@@ -292,7 +339,7 @@ class mainwindow {
             ResultSet rs = st.executeQuery("select * from transactions where username ='" + username + "';");
             String[][] tabledata = new String[50][6];
             String[] coloums = { "SNo.", "Acc Number", "Amount", "Date", "Transfer Mode", "Balance" };
-            int s = 0;
+            int s = 1;
             while (rs.next()) {
                 tabledata[s][0] = "" + s;
                 tabledata[s][1] = accNo;
@@ -302,9 +349,10 @@ class mainwindow {
                 tabledata[s][5] = rs.getString("acbal");
                 s++;
             }
-            JTable jt = new JTable(tabledata, coloums);
+            jt = new JTable(tabledata, coloums);
             JScrollPane js = new JScrollPane(jt);
             historyPanel.add(js);
+            jt.setEnabled(false);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -313,4 +361,48 @@ class mainwindow {
     void personal() {
     }
 
+    boolean updatetransaction(int amt){
+        try (Statement st = con.createStatement()) {
+               if(currbal<=amt && transactmenu.getSelectedIndex()==0){
+                JOptionPane.showMessageDialog(null,"Insufficient Balance","Error",JOptionPane.ERROR_MESSAGE);
+                return false;
+               }
+               else{
+                if(transactmenu.getSelectedIndex()==0){
+                    currbal=currbal-amt;
+                }
+                if(transactmenu.getSelectedIndex()==1){
+                    currbal=currbal+amt;
+                }
+                st.execute("update userdata set acbal="+currbal+" where username='"+username+"';");
+                st.execute("insert into transactions value ("+accNo+",curDate(),"+amt+","+"'"+transactmenu.getSelectedItem()+"',"+currbal+",'"+username+"');");
+                transactavlbal.setText("Current Bal : "+currbal+" Rs");
+                homeaccbal.setText("Account balance                 :              " + currbal+" Rs");
+            }
+        } catch (SQLException e) {
+            transacterror.setText(e.getMessage());
+            return false;
+        }
+        return true; 
+    }
+
+    void deletentry(){
+        try {//TODO deltee
+            // Statement st=con.createStatement();
+            // System.out.println(jt.getSelectedRow());
+            // jt.removeAll();
+            // jt.remove(3);
+            // jt.repaint();
+            // jt.put
+            // history();
+        } catch (Exception e) {
+
+        }
+    }
+
+    void setTime(){
+        Thread t1=new Thread();
+        LocalDateTime d=LocalDateTime.now();
+        System.out.println(d);
+    }
 }

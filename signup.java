@@ -179,7 +179,7 @@ public class signup {
             {errormsg.setText("*Fill all the feilds to continue");return;}
 
             int temp = st.executeUpdate("insert into userdata values ('" + name + "','" + dob + "','" + uname + "','"
-                    + pass + "'," + pin + "," + acno + ");");  //TODO create table row for corresponding user in transaction table
+                    + pass + "'," + pin + "," + acno + ",0);");  //TODO create table row for corresponding user in transaction table
 
             if (temp == 1) {
                 errormsg.setText("*successful");
