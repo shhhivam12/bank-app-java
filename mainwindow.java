@@ -1,6 +1,7 @@
 import java.awt.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -9,24 +10,22 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.LocalDateTime;
 
 class mainwindow {
-    public static void main(String[] args) {
-        try {
-            new mainwindow("shhh", "Shivam"); // TODO remove main class
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    // public static void main(String[] args) {
+    //     try {
+    //         new mainwindow("shhh", "Shivam"); // TODO remove main class
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    // }
 
     int currbal;
-    String name, username, accNo;
+    String name, username, accNo,password;
     JPanel topPanel, centrePanel, bottomPanel; // panels for frame window
     JLabel topPanelText, exitmainwindow, minimize, uicoimg;
     static JLabel toppaneltime;// labels for top panel
@@ -45,6 +44,9 @@ class mainwindow {
     JComboBox<String> transactmenu;
     JButton transactButton;
     JLabel transacterror, transacttop,transactavlbal;
+    //personalpanel
+    JPanel personalpanel1,personalpanel2;
+    JLabel dob,pin,pass;
 
     mainwindow(String username, String name) throws Exception {
         this.name = name;
@@ -113,7 +115,7 @@ class mainwindow {
         bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 10));
         c1 = new CardLayout();
         centrePanel.setLayout(c1);
-
+        
         // top panel shit-->
         topPanelText = new JLabel("<HTML><U>Welcome " + name + " have a great day :)</U></HTML>");
         exitmainwindow = new JLabel("X");
@@ -136,7 +138,7 @@ class mainwindow {
             public void mouseClicked(MouseEvent e) {
                 f.setState(Frame.ICONIFIED);
             }
-
+            
         });
         topPanelText.setFont(new Font("", Font.BOLD, 20));
         topPanelText.setForeground(Color.WHITE);
@@ -155,17 +157,16 @@ class mainwindow {
         topPanel.add(minimize);
         topPanel.add(uicoimg);
         topPanel.add(toppaneltime);
-        // TODO add curr date time in top panel
 
         homePanel = new JPanel(new GridLayout(2, 0, 0, 0));
         transactPanel = new JPanel();
         historyPanel = new JPanel();
-        personalPanel = new JPanel();
+        personalPanel = new JPanel(new GridLayout(1,2));
         homerror = new JLabel();
         homerror.setForeground(Color.red);
-
+        
         // centre panels
-
+        
         centrePanel.add(homePanel, "home");
         centrePanel.add(transactPanel, "transaction");
         centrePanel.add(historyPanel, "history");
@@ -248,20 +249,67 @@ class mainwindow {
 
 
         // history
-        JButton refreshhistoy=new JButton("History");
-        refreshhistoy.addActionListener(new ActionListener() {
+        JButton deletehistory=new JButton("Delete All");
+        JButton printhistory=new JButton("Print");
+        deletehistory.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             deletentry();
             }
         });
-        historyPanel.add(refreshhistoy);
-        // personal
+        printhistory.addActionListener(new ActionListener() {
 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                jt.print();
+            } catch (Exception ex) {
+            }
+            }
+            
+        });
+        historyPanel.add(printhistory);
+        historyPanel.add(deletehistory);
+        // personal
+        personalpanel1=new JPanel(new GridLayout(8,1));
+        personalpanel2=new JPanel();
+        
+        JButton deleteacc=new JButton("Delete Account");
+        deleteacc.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean flag=deleteaccount();
+                if(flag){
+                    try {
+                        new loginframe();
+                        f.dispose();
+                    } catch (Exception exx) {
+                        // TODO: handle exception
+                    }
+            }}
+            
+        });
+        JButton edit=new JButton("Edit Details");
+        dob=new JLabel("Date of Birth     :          "+dob,SwingConstants.CENTER);
+        pin=new JLabel("Pin     :          "+pin,SwingConstants.CENTER);
+        pass=new JLabel("Password     :          "+pass,SwingConstants.CENTER);
+
+        personalpanel1.add(new JLabel("Name              :          "+name,SwingConstants.CENTER));
+        personalpanel1.add(new JLabel("Username          :          "+username,SwingConstants.CENTER));
+        personalpanel1.add(new JLabel("Account no.       :          "+accNo,SwingConstants.CENTER));
+        personalpanel1.add(dob);
+        personalpanel1.add(pin);
+        personalpanel1.add(pass);
+        personalpanel1.add(new JLabel("Balance           :          "+currbal,SwingConstants.CENTER));
+
+        personalpanel2.add(edit);
+        personalpanel2.add(deleteacc);
+        personalPanel.add(personalpanel1);
+        personalPanel.add(personalpanel2);
+        
         // bottom panel-->
         bottomPanel.setPreferredSize(new Dimension(150, 70));
         bottomPanel.setBackground(new Color(52, 32, 72));
-
         bottomPanel.add(homeicon);
         bottomPanel.add(transicon);
         bottomPanel.add(historyicon);
@@ -331,25 +379,32 @@ class mainwindow {
                     "Transaction Succesfull", JOptionPane.INFORMATION_MESSAGE);
         }}
     }
-
+int sno;
+DefaultTableModel dt;
     void history() {
         Statement st;
         try {
+            sno = 1;
             st = con.createStatement();
+            ResultSet counSet = st.executeQuery("select count(username) from transactions where username ='" + username + "';");
+            counSet.next();
+            int c=counSet.getInt("count(username)");
             ResultSet rs = st.executeQuery("select * from transactions where username ='" + username + "';");
-            String[][] tabledata = new String[50][6];
+            String[][] tabledata = new String[c+1][6];
             String[] coloums = { "SNo.", "Acc Number", "Amount", "Date", "Transfer Mode", "Balance" };
-            int s = 1;
             while (rs.next()) {
-                tabledata[s][0] = "" + s;
-                tabledata[s][1] = accNo;
-                tabledata[s][2] = rs.getString("amt");
-                tabledata[s][3] = rs.getString("dateoftrans");
-                tabledata[s][4] = rs.getString("transmode");
-                tabledata[s][5] = rs.getString("acbal");
-                s++;
+                tabledata[sno][0] = "" + sno;
+                tabledata[sno][1] = accNo;
+                tabledata[sno][2] = rs.getString("amt");
+                tabledata[sno][3] = rs.getString("dateoftrans");
+                tabledata[sno][4] = rs.getString("transmode");
+                tabledata[sno][5] = rs.getString("acbal");
+                sno++;
             }
-            jt = new JTable(tabledata, coloums);
+            dt=new DefaultTableModel(tabledata, coloums);
+            jt = new JTable(dt);
+            jt.setSize(300, 270);
+            jt.setPreferredScrollableViewportSize(new Dimension(300,250));
             JScrollPane js = new JScrollPane(jt);
             historyPanel.add(js);
             jt.setEnabled(false);
@@ -357,13 +412,24 @@ class mainwindow {
             e.printStackTrace();
         }
     }
-
     void personal() {
+        try {
+            Statement st=con.createStatement();
+            ResultSet rs = st.executeQuery("select dob,password,pin from userdata where username ='" + username + "';");
+            while (rs.next()) {
+                dob.setText("Date of Birth     :          "+rs.getString("dob"));
+                password=rs.getString("password");
+                pin.setText("Pin     :          "+rs.getInt("pin"));
+            }
+            pass.setText("Password     :          "+password);
+        } catch (Exception e) {
+        
+        }
     }
 
     boolean updatetransaction(int amt){
         try (Statement st = con.createStatement()) {
-               if(currbal<=amt && transactmenu.getSelectedIndex()==0){
+            if(currbal<=amt && transactmenu.getSelectedIndex()==0){
                 JOptionPane.showMessageDialog(null,"Insufficient Balance","Error",JOptionPane.ERROR_MESSAGE);
                 return false;
                }
@@ -378,8 +444,12 @@ class mainwindow {
                 st.execute("insert into transactions value ("+accNo+",curDate(),"+amt+","+"'"+transactmenu.getSelectedItem()+"',"+currbal+",'"+username+"');");
                 transactavlbal.setText("Current Bal : "+currbal+" Rs");
                 homeaccbal.setText("Account balance                 :              " + currbal+" Rs");
+                Object[] newrow=new Object[6];
+                newrow[0]=sno++;newrow[1]=accNo;newrow[3]="today";newrow[4]=transactmenu.getSelectedItem();newrow[2]=amt;newrow[5]=currbal;
+                dt.addRow(newrow);
+                dt.fireTableDataChanged();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             transacterror.setText(e.getMessage());
             return false;
         }
@@ -387,22 +457,37 @@ class mainwindow {
     }
 
     void deletentry(){
-        try {//TODO deltee
-            // Statement st=con.createStatement();
-            // System.out.println(jt.getSelectedRow());
-            // jt.removeAll();
-            // jt.remove(3);
-            // jt.repaint();
-            // jt.put
-            // history();
-        } catch (Exception e) {
-
+        try {
+            int i=JOptionPane.showConfirmDialog(null ,"Are you surue want to clear all entries?You cannot undo your desicion", "Delete transaction hitory", JOptionPane.CANCEL_OPTION);
+            Statement st=con.createStatement();
+            if(i==0){
+                st.executeUpdate("delete from transactions where username='"+username+"';");
+                for(int j=1;j<=dt.getRowCount();j++)
+                {dt.removeRow(j);
+                dt.fireTableDataChanged();
+                } sno=1;
+            }else{
+                return;
+            }
+        } catch (Exception e) {e.printStackTrace();}
+    }
+    boolean deleteaccount(){
+        int i=JOptionPane.showConfirmDialog(null, "This is gonna delete your account are you sure you want to continue", "Delte Account!",JOptionPane.CANCEL_OPTION);
+        System.out.println(i);
+        if(i==0){
+            String p=JOptionPane.showInputDialog("Enter your password ");
+            if(p.equals(password)){
+            try {
+                Statement st=con.createStatement();
+                st.execute("delete from userdata where username='"+username+"';");
+                st.execute("delete from transactions where username='"+username+"';");
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
-    }
-
-    void setTime(){
-        Thread t1=new Thread();
-        LocalDateTime d=LocalDateTime.now();
-        System.out.println(d);
-    }
+    else{JOptionPane.showMessageDialog(null, "Incorrect password");return false;}
+    }return false;
+}
 }

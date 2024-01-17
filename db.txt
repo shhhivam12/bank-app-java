@@ -1,17 +1,22 @@
-sql commands-->2 tables->userdata,transactions history
-
 create database bankjava;
 use bankjava;
 create table userdata(name varchar(20),dob date,username varchar(30) primary key,password varchar(20),pin int,acno int);
-insert into userdata values ('shivam','2004-07-12','shhh','1234',1234,001);
+insert into userdata values ('shivam','2004-07-12','shhh','1234',1234,001,0);
+delete from userdata where username='temp111';
 select * from userdata;
+alter table userdata add acbal int;
+update userdata set acbal=1100 where username='shhh';
 
 create table transactions(acno int primary key,dateoftrans date,amt int,transmode varchar(6),acbal int);
 insert into transactions values(001,'2024-01-12',0,'dr.',0,'shhh');
 alter table transactions add foreign key(username) references userdata(username) on delete cascade;
 alter table transactions add username varchar(30);
 alter table transactions add primary key (username);
-/*delete from transactions where acno=1;*/
+delete from transactions where acno=1000;
 select * from transactions;
 
+insert into transactions value (001,curDate(),100,'cr',100,'shhh');
+select curdate();
+select count(username) from transactions where username='shhh';
+insert into transactions values (100,curdate(),0 ,'Cr.',0,'temp1');
 set sql_safe_updates=0;

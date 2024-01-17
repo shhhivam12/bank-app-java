@@ -136,9 +136,8 @@ class loginframe {
                 ResultSet rs =st.executeQuery("select name from userdata where username='"+uname+"' and password ='"+pass+"'");
                 if(rs.next()){
                     String name=rs.getString("name");
-                    //new mainwindow(name,uname);  TODO-call main window after login
+                    new mainwindow(uname,name);
                     framelogin.dispose();
-                    errormsg.setText("*Login successfull");
                 }else{
                     errormsg.setText("*Username or Password is incorrect.");
                 }

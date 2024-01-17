@@ -8,6 +8,8 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class signup {
     JFrame signpFrame;
@@ -181,7 +183,9 @@ public class signup {
             int temp = st.executeUpdate("insert into userdata values ('" + name + "','" + dob + "','" + uname + "','"
                     + pass + "'," + pin + "," + acno + ",0);");  //TODO create table row for corresponding user in transaction table
 
+            st.executeUpdate("insert into transactions values ("+acno+",curdate(),0 ,'Cr.',0,'"+uname+"');");
             if (temp == 1) {
+                JOptionPane.showMessageDialog(null, "Account created sucessfully!");
                 errormsg.setText("*successful");
             } else {
                 errormsg.setText("*Unsuccessful");
