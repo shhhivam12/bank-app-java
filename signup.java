@@ -9,9 +9,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 public class signup {
+    private String jdbcpassword="";
     JFrame signpFrame;
     JPanel panel1, panel2;
     JLabel uicoimg, iconimg, exit, minimize, loginlink, creatorcred; // signup logo pane2
@@ -21,7 +21,7 @@ public class signup {
     JTextField usernameJTextField, nameJTextField, passwordJTextField, dobJTextField, pinJTextField;
 
     signup() throws Exception {
-        BufferedImage mainicon = ImageIO.read(new File("mainicon.png"));
+        BufferedImage mainicon = ImageIO.read(new File("startup-resources/mainicon.png"));
         iconimg = new JLabel(new ImageIcon(mainicon));
 
         panel1 = new JPanel(new GridLayout(14, 1));
@@ -62,14 +62,16 @@ public class signup {
         pinJTextField = new JTextField();
         pinJTextField.setHorizontalAlignment(JLabel.CENTER);
 
-        errormsg = new JLabel("");
+        errormsg = new JLabel("",SwingConstants.CENTER);
         errormsg.setForeground(Color.red);
 
         createJButton = new JButton("Create Account");
         createJButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                dbconnection();
+                boolean flag=checkfeilds();
+                if(flag)
+                {dbconnection();}
             }
 
         });
@@ -163,12 +165,31 @@ public class signup {
         signpFrame.setVisible(true);
     }
 
+    boolean checkfeilds(){
+        if(usernameJTextField.getText().isEmpty() || nameJTextField.getText().isEmpty()|| passwordJTextField.getText().isEmpty()|| dobJTextField.getText().isEmpty()|| pinJTextField.getText().isEmpty())
+        {errormsg.setText("*Fill all the feilds to continue");return false;}
+
+        if(nameJTextField.getText().length()>15 || usernameJTextField.getText().length()>15 || passwordJTextField.getText().length() >15){
+            errormsg.setText("Fields <15 not allowed");
+            return false;
+        }
+        else if(pinJTextField.getText().length()>4){
+            errormsg.setText("PIN must be less than or equal to 4 digits");
+            return false;
+        }
+        try {
+            Integer.parseInt(pinJTextField.getText());
+        } catch (Exception e) {errormsg.setText("pin can only contain digits");return false;}
+        try {
+            LocalDate.parse(dobJTextField.getText());
+        } catch (Exception e) {errormsg.setText("Date should be in YYYY-MM-DD");return false;}
+        return true;
+    }
+
     void dbconnection() {
         try {
-
-            // Class.forName("com.mysql.jdbc.Driver");
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root",
-                    "imemyselfshivam");
+                    jdbcpassword);
             Statement st = con.createStatement();
             String uname = usernameJTextField.getText();
             String name = nameJTextField.getText();
@@ -177,11 +198,8 @@ public class signup {
             String pin = pinJTextField.getText();
             String acno = "" + (int) (Math.random() * 100000);
 
-            if(uname.isEmpty() || name.isEmpty()|| pass.isEmpty()|| dob.isEmpty()|| pin.isEmpty())
-            {errormsg.setText("*Fill all the feilds to continue");return;}
-
             int temp = st.executeUpdate("insert into userdata values ('" + name + "','" + dob + "','" + uname + "','"
-                    + pass + "'," + pin + "," + acno + ",0);");  //TODO create table row for corresponding user in transaction table
+                    + pass + "'," + pin + "," + acno + ",0);"); 
 
             st.executeUpdate("insert into transactions values ("+acno+",curdate(),0 ,'Cr.',0,'"+uname+"');");
             if (temp == 1) {

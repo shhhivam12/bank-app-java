@@ -17,6 +17,7 @@ public class login {
 }
 
 class loginframe {
+    private String jdbcpassword="";
     JFrame framelogin;
     JPanel panel1,panel2;
     JTextField username=new JTextField();
@@ -27,10 +28,10 @@ class loginframe {
 
     
     loginframe() throws Exception{
-        BufferedImage usericon=ImageIO.read(new File("login-user-icon1.png"));
+        BufferedImage usericon=ImageIO.read(new File("startup-resources/login-user-icon1.png"));
         uicoimg=new JLabel(new ImageIcon(usericon));
 
-        BufferedImage mainicon=ImageIO.read(new File("mainicon.png"));
+        BufferedImage mainicon=ImageIO.read(new File("startup-resources/mainicon.png"));
         iconimg=new JLabel(new ImageIcon(mainicon));  
         
         panel1=new JPanel(null);
@@ -129,7 +130,7 @@ class loginframe {
     void dbconnection(String uname,String pass){
         try {
             
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root","imemyselfshivam");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankjava", "root",jdbcpassword);
             Statement st=con.createStatement();
 
             if(uname!="" && pass!=""){
