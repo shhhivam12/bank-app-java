@@ -1,0 +1,13 @@
+create database bankjava;
+use bankjava;
+create table userdata(name varchar(20),dob date,username varchar(30) primary key,password varchar(20),pin int,acno int,acbal int);
+insert into userdata values ('shivam','2004-07-12','shhh','1234',1234,001,0);
+select * from userdata;
+
+create table transactions(acno int,dateoftrans date,amt int,transmode varchar(6),acbal int,username varchar(30) primary key);
+insert into transactions values(001,curdate(),0,'Cr.',0,'shhh');
+alter table transactions add foreign key(username) references userdata(username) on delete cascade;
+select * from transactions;
+
+insert into transactions values (100,curdate(),0 ,'Cr.',0,'temp1');
+set sql_safe_updates=0;
